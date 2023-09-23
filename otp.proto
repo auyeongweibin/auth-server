@@ -1,0 +1,28 @@
+syntax = "proto3";
+option go_package = "github.com/auyeongweibin/auth-server/otp";
+
+message OTPRequest {
+    string email = 1;
+}
+
+message OTPResponse {
+    string verificationKey = 1;
+    string message = 2;
+}
+
+message VerifyOTPRequest {
+    string verificationKey = 1;
+    string otp = 2;
+    string email = 3;
+}
+
+message VerifyOTPResponse {
+    string status = 1;
+    string details = 2;
+    string email = 3;
+}
+
+service OTP {
+    rpc GetOTP(OTPRequest) returns (OTPResponse);
+    rpc VerifyOTP(VerifyOTPRequest) returns (VerifyOTPResponse);
+}
