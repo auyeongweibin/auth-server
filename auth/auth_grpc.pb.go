@@ -22,7 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RegistrationClient interface {
-	Create(ctx context.Context, in *RegistrationRequest, opts ...grpc.CallOption) (*RegistrationResponse, error)
+	Register(ctx context.Context, in *RegistrationRequest, opts ...grpc.CallOption) (*RegistrationResponse, error)
+	CheckUserEnrolled(ctx context.Context, in *UserEnrolledRequest, opts ...grpc.CallOption) (*UserEnrolledResponse, error)
 }
 
 type registrationClient struct {
@@ -33,9 +34,18 @@ func NewRegistrationClient(cc grpc.ClientConnInterface) RegistrationClient {
 	return &registrationClient{cc}
 }
 
-func (c *registrationClient) Create(ctx context.Context, in *RegistrationRequest, opts ...grpc.CallOption) (*RegistrationResponse, error) {
+func (c *registrationClient) Register(ctx context.Context, in *RegistrationRequest, opts ...grpc.CallOption) (*RegistrationResponse, error) {
 	out := new(RegistrationResponse)
-	err := c.cc.Invoke(ctx, "/Registration/Create", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Registration/Register", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registrationClient) CheckUserEnrolled(ctx context.Context, in *UserEnrolledRequest, opts ...grpc.CallOption) (*UserEnrolledResponse, error) {
+	out := new(UserEnrolledResponse)
+	err := c.cc.Invoke(ctx, "/Registration/CheckUserEnrolled", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +56,8 @@ func (c *registrationClient) Create(ctx context.Context, in *RegistrationRequest
 // All implementations must embed UnimplementedRegistrationServer
 // for forward compatibility
 type RegistrationServer interface {
-	Create(context.Context, *RegistrationRequest) (*RegistrationResponse, error)
+	Register(context.Context, *RegistrationRequest) (*RegistrationResponse, error)
+	CheckUserEnrolled(context.Context, *UserEnrolledRequest) (*UserEnrolledResponse, error)
 	mustEmbedUnimplementedRegistrationServer()
 }
 
@@ -54,8 +65,11 @@ type RegistrationServer interface {
 type UnimplementedRegistrationServer struct {
 }
 
-func (UnimplementedRegistrationServer) Create(context.Context, *RegistrationRequest) (*RegistrationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+func (UnimplementedRegistrationServer) Register(context.Context, *RegistrationRequest) (*RegistrationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedRegistrationServer) CheckUserEnrolled(context.Context, *UserEnrolledRequest) (*UserEnrolledResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckUserEnrolled not implemented")
 }
 func (UnimplementedRegistrationServer) mustEmbedUnimplementedRegistrationServer() {}
 
@@ -70,20 +84,38 @@ func RegisterRegistrationServer(s grpc.ServiceRegistrar, srv RegistrationServer)
 	s.RegisterService(&Registration_ServiceDesc, srv)
 }
 
-func _Registration_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Registration_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegistrationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegistrationServer).Create(ctx, in)
+		return srv.(RegistrationServer).Register(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Registration/Create",
+		FullMethod: "/Registration/Register",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegistrationServer).Create(ctx, req.(*RegistrationRequest))
+		return srv.(RegistrationServer).Register(ctx, req.(*RegistrationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Registration_CheckUserEnrolled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserEnrolledRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistrationServer).CheckUserEnrolled(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Registration/CheckUserEnrolled",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistrationServer).CheckUserEnrolled(ctx, req.(*UserEnrolledRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -96,8 +128,12 @@ var Registration_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RegistrationServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Create",
-			Handler:    _Registration_Create_Handler,
+			MethodName: "Register",
+			Handler:    _Registration_Register_Handler,
+		},
+		{
+			MethodName: "CheckUserEnrolled",
+			Handler:    _Registration_CheckUserEnrolled_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
